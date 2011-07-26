@@ -1,0 +1,3 @@
+module MappableAttributes
+  # Your code goes here...
+end
