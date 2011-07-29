@@ -11,14 +11,14 @@ module MappableAttributes
 
     # Output field names to input field names
     #
-    #   # Maps key value pairs as output => input
-    #   map :output_name => :input_name, ...
+    #     # Maps key value pairs as output => input
+    #     map :output_name => :input_name, ...
     #
-    #   # Maps a key to lambda that later determines value
-    #   # This is equivalent to the above.
-    #   map :output_name do |hash|
-    #     hash[:input_name]
-    #   end
+    #     # Maps a key to lambda that later determines value
+    #     # This is equivalent to the above.
+    #     map :output_name do |hash|
+    #       hash[:input_name]
+    #     end
     #
     #
     # @param [Hash, Symbol] hash of key value pairs, or a symbol

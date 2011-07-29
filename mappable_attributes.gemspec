@@ -6,7 +6,7 @@ Gem::Specification.new do |gem|
   gem.version     = MappableAttributes::VERSION
   gem.author      = "Lights of Apollo, LLC"
   gem.email       = 'gems@lightsofapollo.com'
-  gem.homepage    = 'lightsofapollo.com'
+  gem.homepage    = 'http://www.lightsofapollo.com'
   gem.summary     = %q{Easy mapping of hash keys into other hashes}
   gem.description = %q{Easy mapping of hash keys into other hashes}
 

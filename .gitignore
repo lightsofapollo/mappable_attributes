@@ -1,1 +1,4 @@
 coverage
+.DS_STORE
+doc
+.yardoc
