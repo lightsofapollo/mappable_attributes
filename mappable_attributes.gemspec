@@ -7,8 +7,8 @@ Gem::Specification.new do |gem|
   gem.author      = "Lights of Apollo, LLC"
   gem.email       = 'gems@lightsofapollo.com'
   gem.homepage    = 'lightsofapollo.com'
-  gem.summary     = %q{TODO: Write a gem summary}
-  gem.description = %q{TODO: Write a gem description}
+  gem.summary     = %q{Easy mapping of hash keys into other hashes}
+  gem.description = %q{Easy mapping of hash keys into other hashes}
 
   gem.files         = `git ls-files`.split("\n")
   gem.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
