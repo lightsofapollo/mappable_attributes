@@ -15,7 +15,7 @@ Gem::Specification.new do |gem|
   gem.executables   = `git ls-files -- bin/*`.split("\n").map{|f| File.basename(f)}
   gem.require_paths = ['lib']
 
-  gem.add_dependency('activesupport', '~> 3.0.9')
+  gem.add_dependency('activesupport', '>= 3.0.0')
   gem.add_dependency('i18n', '>= 0.5')
 
   gem.add_development_dependency 'ZenTest', '~> 4.5'
