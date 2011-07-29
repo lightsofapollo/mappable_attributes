@@ -77,6 +77,32 @@ describe MappableAttributes::Base do
 
   end
 
+  describe "#manipulate_key_name" do
+
+    let(:key) { :name }
+
+    context "when altering key without options" do
+
+
+      it "should return given key" do
+        subject.send(:manipulate_key_name, key).should == key
+      end
+
+    end
+
+    context "when using a prefix" do
+    
+      it "should add prefix to key name" do
+        expected = "pre_#{key}".to_sym
+        subject.send(:manipulate_key_name, key, :prefix => 'pre_').should == expected
+      end
+
+    end
+
+
+
+  end
+
   describe "#map_attributes" do
 
     let(:given) do
@@ -118,6 +144,26 @@ describe MappableAttributes::Base do
 
     it "should add mapped elements to response even if input key is missing" do
       result[:blank].should == nil
+    end
+  
+    context "when given a prefix" do
+
+      let(:expected) do
+        {
+          :p_name => 'first last',
+          :p_blank => nil
+        }
+      end
+
+      before do
+        subject.mapped.delete(:full_name)
+      end
+
+      it "should create expected hash with prefixes" do
+        subject.map_attributes(given, :prefix => 'p_').should == expected.with_indifferent_access
+      end
+      
+
     end
 
   end

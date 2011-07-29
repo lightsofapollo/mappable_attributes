@@ -36,24 +36,45 @@ module MappableAttributes
     # All keys evaulated with_indifferent_access
     #
     # @param [Hash] given attributes to map
+    # @param [Hash] hash of options see manipulate_key_name
     # @returns [Hash] Outputs a mapped hash acording to rules set by map
-    def map_attributes(attributes)
+    def map_attributes(attributes, options = {})
       new_attributes = {}.with_indifferent_access
       original_attributes = attributes.clone.with_indifferent_access
 
       mapped.each do |new_key, old_key|
+        key_name = manipulate_key_name(new_key, options)
+
         if(old_key.respond_to?(:call))
-          new_attributes[new_key] = old_key.call(
+          new_attributes[key_name] = old_key.call(
             original_attributes,
             new_attributes
           )
         else
-          new_attributes[new_key] = original_attributes.fetch(old_key) { nil }
+          new_attributes[key_name] = original_attributes.fetch(old_key) { nil }
         end
       end
 
       new_attributes
 
+    end
+
+    protected
+
+    # Alters the name of a given given options
+    #
+    #     # Adds a prefix to key
+    #     :prefix => '...'
+    #
+    # @param [String, Symbol] name of key
+    # @param [Hash] options for alteration
+    # @returns [Symbol] renamed key
+    def manipulate_key_name(key, options = {})
+      if(options[:prefix])
+        key = "#{options[:prefix]}#{key}".to_sym
+      end
+
+      key
     end
 
   end
