@@ -4,7 +4,6 @@ Often I find myself needing to rename the keys of one hash into another.
 
 A trival example of this looks like:
 
-RUBY:
 
     hash1 = {:werid_name => 'value'}
     hash2 = {:name => hash1[:werid_name]}
@@ -17,7 +16,6 @@ fields with extensability via blocks and by inherting from MappableAttributes::B
 
 An example on a sudo Model.
 
-RUBY:
 
     class SudoModel
       
