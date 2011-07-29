@@ -1,75 +1,60 @@
 module MappableAttributes
-  module Base
-    
-    extend ActiveSupport::Concern
-    
-    included do
-      class_attribute :attribute_map, :attribute_map_reverse
-      
-      attr_reader :instance_reverse_keys
-      
-      self.attribute_map = {}.with_indifferent_access
-      self.attribute_map_reverse = {}.with_indifferent_access
+  class Base
+    attr_reader :mapped
 
-      class << self
-        alias_method_chain :inherited, :clone_attributes
+    def initialize(&block)
+      @mapped = {}.with_indifferent_access
+      if(block_given?)
+        instance_eval(&block)
       end
-              
     end
-    
-    module ClassMethods
-      
-      def inherited_with_clone_attributes(klass)
-        klass.attribute_map = attribute_map.clone
-        klass.attribute_map_reverse = attribute_map_reverse.clone
-        inherited_without_clone_attributes(klass) if method_defined?(:inherited_without_clone_attributes)
-      end        
-                      
-      def reverse_map_attribute(attribute)
-        (attribute_map_reverse.fetch(attribute) { attribute }).to_s
-      end
 
-      def map_attribute(attribute)
-        attribute_map.fetch(attribute) { attribute.to_s }
+    # Output field names to input field names
+    #
+    #   # Maps key value pairs as output => input
+    #   map :output_name => :input_name, ...
+    #
+    #   # Maps a key to lambda that later determines value
+    #   # This is equivalent to the above.
+    #   map :output_name do |hash|
+    #     hash[:input_name]
+    #   end
+    #
+    #
+    # @param [Hash, Symbol] hash of key value pairs, or a symbol
+    # @param [Block] Block given when a symbol is used as first param 
+    #
+    def map(hash, &block)
+      if(hash.is_a?(Symbol))
+        @mapped[hash] = block
+      else
+        @mapped.merge!(hash)
       end
+    end
 
-       # This shoud always be used over directly editing attribute_map
-       def map(hash)
-         hash.each do |key, value|
-           value = value.to_sym
-           key = key.to_sym
-   
-           attribute_map[key] = value
-           attribute_map_reverse[value] = key
+    # Returns a mapped list of attributes from a given hash
+    # All keys evaulated with_indifferent_access
+    #
+    # @param [Hash] given attributes to map
+    # @returns [Hash] Outputs a mapped hash acording to rules set by map
+    def map_attributes(attributes)
+      new_attributes = {}.with_indifferent_access
+      original_attributes = attributes.clone.with_indifferent_access
+
+      mapped.each do |new_key, old_key|
+        if(old_key.respond_to?(:call))
+          new_attributes[new_key] = old_key.call(
+            original_attributes,
+            new_attributes
+          )
+        else
+          new_attributes[new_key] = original_attributes.fetch(old_key) { nil }
         end
       end
 
-    end
-    
-    module InstanceMethods
-      
-      def map_attributes(attributes)
-        @instance_reverse_keys ||= attribute_map_reverse.clone
-        results = {}.with_indifferent_access
+      new_attributes
 
-        attributes.each do |key, value|
-          formatted_key = attribute_map.fetch(key) { key.to_s.gsub(/^C_/, '').underscore }
-          @instance_reverse_keys[formatted_key] = key
-          results[formatted_key] = value
-        end
-        results
-      end
-
-      def reverse_map_attributes(attributes)
-        results = {}.with_indifferent_access
-        attributes.each do |key, value|
-          results[@instance_reverse_keys.fetch(key){key}] = value
-        end
-        results
-      end
-                
     end
-    
-    
+
   end
 end

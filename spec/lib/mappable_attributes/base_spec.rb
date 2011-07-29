@@ -1,175 +1,125 @@
 require 'spec_helper'
 
 describe MappableAttributes::Base do
-  
-  subject do
-    Class.new do
-      include MappableAttributes::Base
+
+  describe "#initialize" do
+
+    before do
+      subject.mapped[:zomg] = 'wow'
     end
+
+    it "should allow access to mapped field via symbols" do
+      subject.mapped[:zomg].should == 'wow'
+    end
+
+    it "should allow access to mapped fields via strings" do
+      subject.mapped['zomg'].should == 'wow'
+    end
+
+    context "when initializing with a block" do
+
+      before do
+        
+        context = nil
+        @object = described_class.new do
+          context = self
+
+          map :key => :value
+        end
+
+        @context = context
+
+      end
+
+      it "should execute block given to initialize in context of self" do
+        @context.should == @object
+      end
+
+      it "should successfully map attributes inside initializer" do
+        @object.mapped[:key].should == :value
+      end
+
+    end
+
   end
 
-  context "#self.map_attribute" do
 
-     before do
-       @class = Class.new(subject) do
-         map :name => 'C_Name', :id => 'ContactID'
-       end
-     end
+  describe "#map" do
 
-     it 'should return value in attribute_map when given a key exists' do
-       @class.map_attribute(:name).should == :C_Name
-     end
+    context "when using with hashes" do
 
-     it 'should return given value when key does not exist within attribute_map' do
-       @class.map_attribute(:Cezar).should == 'Cezar'
-     end
+      before do
+        subject.map :out => :in, :out2 => :in2
+      end
 
-   end
+      it "should add key value pairs to mapped" do
+        subject.mapped.should == {:out => :in, :out2 => :in2}.with_indifferent_access
+      end
 
-   context "#self.attribute_map" do
-     specify { subject.attribute_map.class == Hash }
+    end
 
-     context "when inherited entity attribute map is cloned by not the same object" do
-       before do
-         @super = Class.new(subject)
-         @super.attribute_map[:id] = 'ContactID'
-         @child = Class.new(@super)
-       end
+    context "when using with key, block pair" do
 
-       it 'should have all the same keys' do
-         @child.attribute_map.keys.should == @super.attribute_map.keys 
-       end
+      let(:block) do
+        proc {}
+      end
 
-       it 'should have all the same values' do
-         @child.attribute_map.values.should == @super.attribute_map.values
-       end
 
-       it 'should not be the same object as parent' do
-         @child.attribute_map.object_id.should_not === @super.attribute_map.object_id
-       end
+      before do
+        subject.map(:zomg, &block)
+      end
 
-     end
-   
-   end
- 
- 
-   context "#self.map" do
+      it "should have saved block to mapped" do
+        subject.mapped[:zomg].object_id.should == block.object_id
+      end
 
-     it 'should be able to use map on the class level to map attributes' do
-       subject.map :id => 'C_Attribute'
-       subject.attribute_map[:id].should == :C_Attribute
-     end
+    end
 
-     it 'should be able to override existing maps' do
-       subject.map :id => 'not_me'
-       subject.map :id => 'me'
-       subject.attribute_map[:id].should == :me
-     end
-   
-     context 'when reverse' do
-       it 'should also add the reverse to attribute_map_reverse' do
-         subject.map :Contact => 'name'
-         subject.map :IDC => 'id', :Real => 'email'
+  end
 
-         reverse = {
-           :name => :Contact,
-           :id => :IDC,
-           :email => :Real
-         }.with_indifferent_access
-         subject.attribute_map_reverse.should == reverse
-       end
-     end
+  describe "#map_attributes" do
 
-   end  
- 
-   context "#map_attributes" do
-     let(:input) do
-       {
-           :C_EmailAddress => 'email@address.com',
-           :ContactID => '1',
-           :normal_id => 'wow'
-       }.with_indifferent_access
-     end
+    let(:given) do
+      {:full_name => 'first last'}
+    end
 
-     let(:expected) do
-       {
-           :email_address => 'email@address.com',
-           :id => '1',
-           :normal_id => 'wow'
-       }.with_indifferent_access
-     end
+    let(:expected) do
+      {
+        :full_name => 'first last',
+        :name => 'first last',
+        :first_name => 'first', 
+        :last_name => 'last',
+        :blank => nil
+      }
+    end
 
-     let(:reverse) do
-       {
-         :email_address => 'C_EmailAddress',
-         :id => 'ContactID',
-         :normal_id => 'normal_id'
-       }.with_indifferent_access
-     end
+    let(:result) do
+      subject.map_attributes(given)
+    end
 
-     before do
-       klass_object = Class.new(subject) do
-         map :ContactID => 'id'
-       end
-       @klass = klass_object.new
-       @result = @klass.send(:map_attributes, input)
-     end
+    before do
+      subject.map :name => :full_name
 
-     it 'should map attributes from CamelCase format to snake_case format' do
-       @result.should == expected
-     end
+      subject.map :full_name do |hash, new_hash|
+        split = hash['full_name'].split(" ")
+        new_hash[:first_name] = split[0]
+        new_hash[:last_name] = split[1]
 
-     it 'should store the original key names in attribute_keys_to_eloqua' do
-       @klass.instance_reverse_keys.should == reverse
-     end
+        hash['full_name']
+      end
 
-     context "#reverse_map_attributes" do
-   
-       context "when given valid input" do
-         before do
-           @reversed = @klass.send(:reverse_map_attributes, @result)
-         end
+      subject.map :blank => :notthere
 
-         it 'should be able to reverse map_attributes back into input' do
-           @reversed.should == input  
-         end          
-       end
+    end
 
-       context "when given invalid input" do
-         let(:input) do
-           {
-             :id => '1',
-             :phone_field => 'phoney'
-           }
-         end
+    it "should create expected hash" do
+      result.should == expected.with_indifferent_access
+    end
 
-         let(:expected) do
-           {
-             :ContactID => '1',
-             :phone_field => 'phoney'
-           }.with_indifferent_access
-         end
+    it "should add mapped elements to response even if input key is missing" do
+      result[:blank].should == nil
+    end
 
-         let(:klass) do
-           Class.new(subject) do
-             map :ContactID => 'id'
-           end
-         end
+  end
 
-         before do
-           object = klass.new
-           object.send(:map_attributes, {})
-           @result = object.send(:reverse_map_attributes, input)
-         end
-
-         it "should use given key when it is not known" do
-           @result.should == expected
-         end
-       
-       end
-   
-     end
-
-   end  
-   
 end

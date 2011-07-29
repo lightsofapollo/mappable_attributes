@@ -8,4 +8,5 @@ module MappableAttributes
   require 'active_support/inflector'  
   
   autoload :Base, 'mappable_attributes/base'
+
 end
