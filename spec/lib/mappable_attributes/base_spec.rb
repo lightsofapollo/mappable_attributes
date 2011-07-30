@@ -2,11 +2,24 @@ require 'spec_helper'
 
 describe MappableAttributes::Base do
 
+  let(:assign_context) do
+    {:contextify => 'true'}
+  end
+
   describe "#initialize" do
 
     before do
       subject.mapped[:zomg] = 'wow'
     end
+
+    it "should setup merges" do
+      subject.merges.should == []
+    end
+
+    it "should setup assigned" do
+      subject.assigned.should == {}.with_indifferent_access
+    end
+    
 
     it "should allow access to mapped field via symbols" do
       subject.mapped[:zomg].should == 'wow'
@@ -59,6 +72,22 @@ describe MappableAttributes::Base do
 
     it "should have added assignment to #assigned" do
       subject.assigned['key'].object_id.should == block.object_id
+    end
+
+  end
+
+  describe "#merge" do
+
+    let(:block) do
+      proc {}
+    end
+
+    before do
+      subject.merge(&block)
+    end
+
+    it "should have added block to merges" do
+      subject.merges.first.should == block
     end
 
   end
@@ -132,8 +161,6 @@ describe MappableAttributes::Base do
 
     end
 
-
-
   end
 
   describe "#map_attributes" do
@@ -154,30 +181,70 @@ describe MappableAttributes::Base do
       subject.map_attributes(given)
     end
 
-    before do
-      subject.map :name => :full_name
+    context "when successful" do
 
-      subject.map :full_name do |hash, new_hash|
-        hash['full_name']
+      before do
+        subject.map :name => :full_name
+
+        subject.map :full_name do |hash, new_hash|
+          hash['full_name']
+        end
+
+        subject.map :blank => :notthere
+
       end
 
-      subject.map :blank => :notthere
+      it "should create expected hash" do
+        result.should == expected.with_indifferent_access
+      end
+
+      it "should add mapped elements to response even if input key is missing" do
+        result[:blank].should == nil
+      end
 
     end
 
-    it "should create expected hash" do
-      result.should == expected.with_indifferent_access
-    end
+    context "with merges" do
 
-    it "should add mapped elements to response even if input key is missing" do
-      result[:blank].should == nil
+      let(:expected) do
+        assign_context.with_indifferent_access
+      end
+
+      before do
+        subject.assign_context = assign_context
+        subject.merge do
+          self
+        end
+      end
+
+      context "with prefix" do
+
+        let(:result) do
+          subject.map_attributes(given, :prefix => 'p_')
+        end
+
+        let(:expected) do
+          {:p_contextify => assign_context[:contextify]}.with_indifferent_access
+        end
+
+        it "should output expected hash" do
+          result.should == expected
+        end
+
+      end
+
+      context "without options" do
+
+        it "should output expected hash" do
+          result.should == expected
+        end
+
+      end
+
     end
 
     context "with assignments" do
 
-      let(:assign_context) do
-        {:contextify => 'true'}
-      end
 
       let(:result) do
         subject.map_attributes(given, :prefix => 'prefix_')
@@ -186,8 +253,6 @@ describe MappableAttributes::Base do
       let(:expected) do
         {
           :prefix_full_name => 'first last',
-          :prefix_name => 'first last',
-          :prefix_blank => nil,
           :prefix_dynamic => 'true'
         }
       end
@@ -196,6 +261,8 @@ describe MappableAttributes::Base do
       before do
         context = nil
         subject.assign_context = assign_context
+
+        subject.allow :full_name
 
         subject.assign :dynamic do
           context = self
@@ -222,12 +289,11 @@ describe MappableAttributes::Base do
       let(:expected) do
         {
           :p_name => 'first last',
-          :p_blank => nil
         }
       end
 
       before do
-        subject.mapped.delete(:full_name)
+        subject.map :name => :full_name
       end
 
       it "should create expected hash with prefixes" do

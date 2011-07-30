@@ -1,11 +1,12 @@
 module MappableAttributes
   class Base
-    attr_reader :mapped, :assigned
+    attr_reader :mapped, :assigned, :merges
     attr_accessor :assign_context
 
     def initialize(&block)
       @mapped = {}.with_indifferent_access
       @assigned = {}.with_indifferent_access
+      @merges = []
 
       @assign_context = self
 
@@ -55,6 +56,16 @@ module MappableAttributes
       end
     end
 
+    # Merge is for merging fields of another hash into
+    # the results of map_attributes. Takes a block which is executed
+    # in the context of assign_context and the result is merged into
+    # the results
+    #
+    # @param [Block] block to execute to get the hash to merge
+    def merge(&block)
+      merges << block if block_given?
+    end
+
 
     # Allows field into output without renaming key
     #
@@ -79,6 +90,10 @@ module MappableAttributes
       new_attributes = {}.with_indifferent_access
       original_attributes = attributes.clone.with_indifferent_access
 
+      # @TODO:
+      # I think the three below types should be abstracted
+      # out into different methods called by this method
+
       mapped.each do |new_key, old_key|
         key_name = manipulate_key_name(new_key, options)
 
@@ -95,6 +110,16 @@ module MappableAttributes
       assigned.each do |key, block|
         key_name = manipulate_key_name(key, options)
         new_attributes[key_name] = assign_context.instance_eval(&block)
+      end
+
+      merges.each do |merge|
+        results = assign_context.instance_eval(&merge)
+        if(results.is_a?(Hash))
+          results.each do |key, value|
+            key_name = manipulate_key_name(key, options)
+            new_attributes[key_name] = value 
+          end
+        end
       end
 
       new_attributes
