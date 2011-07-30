@@ -13,10 +13,12 @@ module MappableAttributes
 
       # Runs map_attributes on the attributes method
       #
+      # @param [Hash] Hash to export uses attributes method by default
       # @param [Hash] options for map_attributes
       # @returns [Hash] mapped attributes
-      def export_attributes(options = {})
-        attribute_map.map_attributes(attributes, options)
+      def export_attributes(hash = nil, options = {})
+        hash ||= attributes
+        attribute_map.map_attributes(hash, options)
       end
 
       module ClassMethods

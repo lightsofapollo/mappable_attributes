@@ -49,10 +49,31 @@ describe MappableAttributes::Modules::ExportAttributes do
       instance.export_attributes.should == {:name => 'James'}.with_indifferent_access
     end
 
-    it "should allow options" do
-      expected = {:prefix_name => 'James'}.with_indifferent_access
-      instance.export_attributes(:prefix => 'prefix_').should == expected
+    context "with options" do
+
+      it "should allow options" do
+        expected = {:prefix_name => 'James'}.with_indifferent_access
+        instance.export_attributes(nil, :prefix => 'prefix_').should == expected
+      end
+
     end
+
+
+    context "with a given hash" do
+
+      before do
+        klass.setup_attribute_map do
+          allow :city
+        end
+      end
+
+      it "should use given attributes over assumed attributes" do
+        expected = {:city => 'Portland', :name => nil}.with_indifferent_access
+        instance.export_attributes({:city => 'Portland'}).should == expected
+      end
+
+    end
+
 
   end
 
