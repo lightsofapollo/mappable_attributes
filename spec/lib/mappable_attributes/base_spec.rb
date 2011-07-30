@@ -77,6 +77,19 @@ describe MappableAttributes::Base do
 
   end
 
+  describe "#allow" do
+
+    before do
+      subject.allow :name, :city
+    end
+
+    it "should add allowed names into mapped" do
+      expected = {:name => :name, :city => :city}.with_indifferent_access
+      subject.mapped.should == expected
+    end
+
+  end
+
   describe "#manipulate_key_name" do
 
     let(:key) { :name }

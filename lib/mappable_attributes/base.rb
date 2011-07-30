@@ -32,6 +32,20 @@ module MappableAttributes
       end
     end
 
+
+    # Allows field into output without renaming key
+    #
+    #     allow :name, :city
+    #
+    # @param [Symbol]
+    def allow(*args)
+      allowed = {}
+      args.each do |key|
+        allowed[key] = key
+      end
+      map(allowed)
+    end
+
     # Returns a mapped list of attributes from a given hash
     # All keys evaulated with_indifferent_access
     #

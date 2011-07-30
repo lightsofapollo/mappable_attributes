@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    mappable_attributes (0.0.4)
+    mappable_attributes (0.0.5)
       activesupport (>= 3.0.0)
       i18n (>= 0.5)
 
