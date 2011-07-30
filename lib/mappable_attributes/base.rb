@@ -1,9 +1,14 @@
 module MappableAttributes
   class Base
-    attr_reader :mapped
+    attr_reader :mapped, :assigned
+    attr_accessor :assign_context
 
     def initialize(&block)
       @mapped = {}.with_indifferent_access
+      @assigned = {}.with_indifferent_access
+
+      @assign_context = self
+
       if(block_given?)
         instance_eval(&block)
       end
@@ -29,6 +34,24 @@ module MappableAttributes
         @mapped[hash] = block
       else
         @mapped.merge!(hash)
+      end
+    end
+
+    # Assign is designed for use in combination with a block
+    # and #assign_context (which is the context in blocks execute)
+    #
+    # Designed for use with ActiveRecord relations but can be used
+    # for any objects
+    #
+    #     assign :field do
+    #       association.field
+    #     end
+    #
+    # @param [Symbol] name of assignment
+    # @param [Block] block to be executed to get value of assignment executed in context of assign_context
+    def assign(key, &block)
+      if(block_given?)
+        assigned[key] = block
       end
     end
 
@@ -67,6 +90,11 @@ module MappableAttributes
         else
           new_attributes[key_name] = original_attributes.fetch(old_key) { nil }
         end
+      end
+
+      assigned.each do |key, block|
+        key_name = manipulate_key_name(key, options)
+        new_attributes[key_name] = assign_context.instance_eval(&block)
       end
 
       new_attributes

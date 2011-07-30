@@ -17,6 +17,10 @@ module MappableAttributes
       # @param [Hash] options for map_attributes
       # @returns [Hash] mapped attributes
       def export_attributes(hash = nil, options = {})
+        if(attribute_map.assign_context === attribute_map)
+          attribute_map.assign_context = self
+        end
+
         hash ||= attributes
         attribute_map.map_attributes(hash, options)
       end

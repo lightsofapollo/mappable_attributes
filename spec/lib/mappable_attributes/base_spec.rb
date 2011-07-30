@@ -16,6 +16,10 @@ describe MappableAttributes::Base do
       subject.mapped['zomg'].should == 'wow'
     end
 
+    it "should set assign_context to self by default" do
+      subject.assign_context.should == subject
+    end
+
     context "when initializing with a block" do
 
       before do
@@ -39,6 +43,22 @@ describe MappableAttributes::Base do
         @object.mapped[:key].should == :value
       end
 
+    end
+
+  end
+
+  describe "#assign" do
+
+    let(:block) do
+      proc {}
+    end
+
+    before do
+      subject.assign :key, &block
+    end
+
+    it "should have added assignment to #assigned" do
+      subject.assigned['key'].object_id.should == block.object_id
     end
 
   end
@@ -126,8 +146,6 @@ describe MappableAttributes::Base do
       {
         :full_name => 'first last',
         :name => 'first last',
-        :first_name => 'first', 
-        :last_name => 'last',
         :blank => nil
       }
     end
@@ -140,10 +158,6 @@ describe MappableAttributes::Base do
       subject.map :name => :full_name
 
       subject.map :full_name do |hash, new_hash|
-        split = hash['full_name'].split(" ")
-        new_hash[:first_name] = split[0]
-        new_hash[:last_name] = split[1]
-
         hash['full_name']
       end
 
@@ -157,6 +171,50 @@ describe MappableAttributes::Base do
 
     it "should add mapped elements to response even if input key is missing" do
       result[:blank].should == nil
+    end
+
+    context "with assignments" do
+
+      let(:assign_context) do
+        {:contextify => 'true'}
+      end
+
+      let(:result) do
+        subject.map_attributes(given, :prefix => 'prefix_')
+      end
+
+      let(:expected) do
+        {
+          :prefix_full_name => 'first last',
+          :prefix_name => 'first last',
+          :prefix_blank => nil,
+          :prefix_dynamic => 'true'
+        }
+      end
+
+
+      before do
+        context = nil
+        subject.assign_context = assign_context
+
+        subject.assign :dynamic do
+          context = self
+          self[:contextify]
+        end
+
+        result
+
+        @context = context
+      end
+
+      it "should execute assignment block in the context of assign_context" do
+        @context.should === assign_context
+      end
+
+      it "should created expected hash" do
+        result.should == expected.with_indifferent_access
+      end
+
     end
   
     context "when given a prefix" do

@@ -8,6 +8,11 @@ describe MappableAttributes::Modules::ExportAttributes do
     Class.new do
       attr_accessor :attributes
       include MappableAttributes::Modules::ExportAttributes
+
+      def my_method
+        :method
+      end
+
     end
   end
 
@@ -37,6 +42,10 @@ describe MappableAttributes::Modules::ExportAttributes do
       klass.new
     end
 
+    let(:result) do
+      instance.export_attributes
+    end
+
     before do
       klass.setup_attribute_map do
         map :name => :first_name
@@ -46,7 +55,7 @@ describe MappableAttributes::Modules::ExportAttributes do
     end
 
     it "should export attributes" do
-      instance.export_attributes.should == {:name => 'James'}.with_indifferent_access
+      result.should == {:name => 'James'}.with_indifferent_access
     end
 
     context "with options" do
@@ -54,6 +63,22 @@ describe MappableAttributes::Modules::ExportAttributes do
       it "should allow options" do
         expected = {:prefix_name => 'James'}.with_indifferent_access
         instance.export_attributes(nil, :prefix => 'prefix_').should == expected
+      end
+
+    end
+
+    context "with an assignment" do
+
+      before do
+        klass.setup_attribute_map do
+          assign :dynamic do
+            my_method
+          end
+        end
+      end
+
+      it "should execute assignments in the context of the extended object" do
+        result[:dynamic].should == :method
       end
 
     end
